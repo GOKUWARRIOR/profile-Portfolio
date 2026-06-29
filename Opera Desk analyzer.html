@@ -1,0 +1,1836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OperaDesk — Real MIS & Data Analyst Workspace</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg:         #f5f3ef;
+  --surface:    #ffffff;
+  --surface2:   #edeae4;
+  --border:     #ddd9d2;
+  --border2:    #c9c4bb;
+
+  --violet:     #6d28d9;
+  --violet-lt:  #ede9ff;
+  --violet-mid: #8b5cf6;
+  --emerald:    #059669;
+  --emerald-lt: #d1fae5;
+  --orange:     #ea580c;
+  --orange-lt:  #ffedd5;
+  --sky:        #0284c7;
+  --sky-lt:     #e0f2fe;
+  --rose:       #e11d48;
+  --rose-lt:    #ffe4e6;
+  --gold:       #b45309;
+  --gold-lt:    #fef3c7;
+
+  --text:       #1a1614;
+  --text2:      #504a44;
+  --muted:      #9c9590;
+
+  --r:          10px;
+  --r-sm:       7px;
+  --sh:         0 1px 3px rgba(0,0,0,0.07),0 1px 2px rgba(0,0,0,0.04);
+  --sh-md:      0 4px 14px rgba(0,0,0,0.08);
+  --sh-lg:      0 12px 40px rgba(0,0,0,0.13);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;}
+
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  display:flex;
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* ── SIDEBAR ─────────────────────────────── */
+#sidebar{
+  width:220px;
+  min-width:220px;
+  height:100vh;
+  background:var(--text);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  flex-shrink:0;
+}
+
+.sb-logo{
+  padding:20px 18px 16px;
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.sb-logo-name{
+  font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px;
+}
+.sb-logo-tag{
+  font-size:9px;font-weight:600;color:rgba(255,255,255,0.4);
+  letter-spacing:1.8px;text-transform:uppercase;margin-top:2px;
+}
+
+.sb-section{padding:14px 10px 4px;}
+.sb-section-label{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:rgba(255,255,255,0.3);padding:0 8px;margin-bottom:4px;
+}
+
+.sb-item{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:var(--r-sm);
+  cursor:pointer;font-size:12px;font-weight:500;
+  color:rgba(255,255,255,0.55);
+  transition:all .15s;margin-bottom:1px;
+  position:relative;
+}
+.sb-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.9);}
+.sb-item.active{background:var(--violet);color:#fff;font-weight:700;}
+.sb-icon{
+  width:28px;height:28px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;background:rgba(255,255,255,0.07);flex-shrink:0;
+}
+.sb-item.active .sb-icon{background:rgba(255,255,255,0.18);}
+.sb-badge{
+  margin-left:auto;font-size:9px;font-weight:800;
+  padding:2px 6px;border-radius:10px;
+  background:var(--rose);color:#fff;
+}
+.sb-badge.warn{background:var(--orange);}
+.sb-badge.ok{background:var(--emerald);}
+
+.sb-bottom{
+  margin-top:auto;padding:14px 10px;
+  border-top:1px solid rgba(255,255,255,0.08);
+}
+.sb-user{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 10px;border-radius:var(--r-sm);
+  background:rgba(255,255,255,0.06);
+}
+.sb-avatar{
+  width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,var(--violet),var(--violet-mid));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.sb-uname{font-size:11px;font-weight:700;color:#fff;}
+.sb-urole{font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;}
+
+/* ── MAIN SHELL ──────────────────────────── */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* ── TOPBAR ──────────────────────────────── */
+#topbar{
+  height:54px;background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 26px;flex-shrink:0;
+  box-shadow:var(--sh);
+  z-index:10;
+}
+.tb-left{display:flex;flex-direction:column;}
+.tb-title{font-size:15px;font-weight:800;letter-spacing:-.3px;}
+.tb-crumb{font-size:10px;color:var(--muted);}
+.tb-right{display:flex;align-items:center;gap:8px;}
+
+.live-dot{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:10px;font-weight:700;color:var(--emerald);
+}
+.live-dot::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--emerald);animation:pulse 1.5s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.clock{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  color:var(--text2);background:var(--surface2);
+  padding:5px 12px;border-radius:20px;border:1px solid var(--border);
+}
+
+.ib{
+  width:34px;height:34px;border-radius:var(--r-sm);
+  border:1px solid var(--border);background:var(--surface);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:15px;transition:.15s;position:relative;
+}
+.ib:hover{background:var(--surface2);}
+.ib-badge{
+  position:absolute;top:4px;right:4px;width:7px;height:7px;
+  background:var(--rose);border-radius:50%;border:2px solid var(--surface);
+}
+
+.btn-primary{
+  padding:7px 16px;border-radius:var(--r-sm);
+  background:var(--violet);color:#fff;
+  font-size:12px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;transition:.15s;
+  box-shadow:0 2px 8px rgba(109,40,217,.25);
+}
+.btn-primary:hover{background:#5b21b6;transform:translateY(-1px);}
+
+.btn-sec{
+  padding:7px 14px;border-radius:var(--r-sm);
+  background:var(--surface);color:var(--text2);
+  font-size:12px;font-weight:600;border:1px solid var(--border);
+  cursor:pointer;font-family:inherit;transition:.15s;
+}
+.btn-sec:hover{background:var(--surface2);}
+
+/* ── CONTENT AREA ────────────────────────── */
+#content{flex:1;overflow-y:auto;overflow-x:hidden;}
+.page{display:none;padding:24px 26px;}
+.page.active{display:block;}
+
+/* ── CARDS ───────────────────────────────── */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;box-shadow:var(--sh);
+}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:13px;font-weight:700;}
+.card-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+/* ── GRIDS ───────────────────────────────── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;}
+.g12{display:grid;grid-template-columns:1fr 2fr;gap:14px;}
+.mb14{margin-bottom:14px;}
+.mb20{margin-bottom:20px;}
+
+/* ── KPI CARDS ───────────────────────────── */
+.kc{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);
+  position:relative;overflow:hidden;cursor:default;transition:.18s;
+}
+.kc:hover{transform:translateY(-2px);box-shadow:var(--sh-md);}
+.kc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.kc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.kc-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);}
+.kc-val{font-size:26px;font-weight:800;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;line-height:1;margin-top:6px;}
+.kc-delta{font-size:10px;font-weight:600;margin-top:6px;display:flex;align-items:center;gap:3px;}
+.kc-bar{position:absolute;bottom:0;left:0;right:0;height:3px;}
+
+.kv{--c:var(--violet);}
+.kv .kc-icon{background:var(--violet-lt);}
+.kv .kc-val{color:var(--violet);}
+.kv .kc-bar{background:linear-gradient(90deg,var(--violet),transparent);}
+
+.ke{--c:var(--emerald);}
+.ke .kc-icon{background:var(--emerald-lt);}
+.ke .kc-val{color:var(--emerald);}
+.ke .kc-bar{background:linear-gradient(90deg,var(--emerald),transparent);}
+
+.ko{--c:var(--orange);}
+.ko .kc-icon{background:var(--orange-lt);}
+.ko .kc-val{color:var(--orange);}
+.ko .kc-bar{background:linear-gradient(90deg,var(--orange),transparent);}
+
+.kr{--c:var(--rose);}
+.kr .kc-icon{background:var(--rose-lt);}
+.kr .kc-val{color:var(--rose);}
+.kr .kc-bar{background:linear-gradient(90deg,var(--rose),transparent);}
+
+.up{color:var(--emerald);}
+.dn{color:var(--rose);}
+.fl{color:var(--orange);}
+
+/* ── PILL ────────────────────────────────── */
+.pill{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;
+}
+.pill::before{content:'';width:5px;height:5px;border-radius:50%;}
+.pv{background:var(--violet-lt);color:var(--violet);}
+.pv::before{background:var(--violet);}
+.pe{background:var(--emerald-lt);color:var(--emerald);}
+.pe::before{background:var(--emerald);}
+.po{background:var(--orange-lt);color:var(--orange);}
+.po::before{background:var(--orange);}
+.pr{background:var(--rose-lt);color:var(--rose);}
+.pr::before{background:var(--rose);}
+.ps{background:var(--surface2);color:var(--muted);}
+.ps::before{background:var(--muted);}
+.pk{background:var(--sky-lt);color:var(--sky);}
+.pk::before{background:var(--sky);}
+
+/* ── TAG ─────────────────────────────────── */
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:5px;
+  font-size:9px;font-weight:700;letter-spacing:.3px;
+  background:var(--violet-lt);color:var(--violet);
+  border:1px solid rgba(109,40,217,.15);
+}
+
+/* ── TABLE ───────────────────────────────── */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  padding:9px 13px;text-align:left;
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;
+  background:var(--surface);position:sticky;top:0;
+}
+tbody tr{border-bottom:1px solid var(--border);transition:.12s;cursor:pointer;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--surface2);}
+tbody td{padding:11px 13px;font-size:12px;font-weight:500;}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px;}
+
+/* ── TOOLBAR ─────────────────────────────── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.search{
+  flex:1;min-width:180px;padding:8px 13px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface2);font-family:inherit;font-size:12px;
+  color:var(--text);outline:none;transition:.15s;
+}
+.search::placeholder{color:var(--muted);}
+.search:focus{border-color:var(--violet);background:var(--surface);}
+
+.chip{
+  padding:7px 13px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:var(--surface);font-size:11px;font-weight:600;color:var(--text2);
+  cursor:pointer;transition:.15s;font-family:inherit;
+}
+.chip:hover{border-color:var(--violet);color:var(--violet);}
+.chip.on{background:var(--violet-lt);border-color:var(--violet);color:var(--violet);}
+
+/* ── PROGRESS ────────────────────────────── */
+.prog-row{margin-bottom:14px;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:5px;}
+.prog-track{height:7px;background:var(--surface2);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;transition:width 1.2s cubic-bezier(.4,0,.2,1);}
+
+/* ── TABS ────────────────────────────────── */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:18px;gap:0;}
+.tab{
+  padding:9px 16px;font-size:12px;font-weight:600;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;
+}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--violet);border-bottom-color:var(--violet);}
+
+/* ── FORM ────────────────────────────────── */
+.fg{margin-bottom:14px;}
+.fl{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;}
+.fi,.fs{
+  width:100%;padding:9px 13px;border:1px solid var(--border);
+  border-radius:var(--r-sm);background:var(--surface2);
+  font-family:inherit;font-size:12px;color:var(--text);outline:none;transition:.15s;
+}
+.fi:focus,.fs:focus{border-color:var(--violet);background:var(--surface);}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+/* ── TOGGLE ──────────────────────────────── */
+.toggle{
+  width:38px;height:21px;border-radius:11px;
+  background:var(--border2);position:relative;cursor:pointer;transition:.2s;flex-shrink:0;
+}
+.toggle.on{background:var(--violet);}
+.toggle::after{
+  content:'';position:absolute;width:15px;height:15px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:.2s;
+}
+.toggle.on::after{left:20px;}
+
+/* ── UPLOAD ZONE ─────────────────────────── */
+.upload-zone{
+  border:2px dashed var(--border2);border-radius:var(--r);
+  padding:40px 20px;text-align:center;cursor:pointer;
+  transition:.2s;background:var(--surface2);
+}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--violet);background:var(--violet-lt);}
+.upload-zone input{display:none;}
+.upload-icon{font-size:36px;margin-bottom:10px;}
+.upload-title{font-size:14px;font-weight:700;margin-bottom:4px;}
+.upload-sub{font-size:11px;color:var(--muted);}
+
+/* ── DRAWER ──────────────────────────────── */
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;width:320px;
+  background:var(--surface);border-left:1px solid var(--border);
+  box-shadow:var(--sh-lg);z-index:200;
+  transform:translateX(100%);transition:.28s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+}
+.drawer.open{transform:translateX(0);}
+.drawer-hd{
+  padding:18px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.drawer-hd h3{font-size:14px;font-weight:800;}
+.close-x{
+  width:28px;height:28px;border-radius:6px;background:var(--surface2);
+  border:none;cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+}
+.drawer-body{padding:16px 20px;overflow-y:auto;flex:1;}
+
+/* ── MODAL ───────────────────────────────── */
+.modal-bg{
+  position:fixed;inset:0;background:rgba(26,22,20,.45);
+  backdrop-filter:blur(4px);z-index:300;
+  display:none;align-items:center;justify-content:center;
+}
+.modal-bg.open{display:flex;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:26px;width:500px;max-width:95vw;
+  box-shadow:var(--sh-lg);animation:mIn .22s ease;
+}
+@keyframes mIn{from{opacity:0;transform:scale(.96) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+.modal-title{font-size:16px;font-weight:800;}
+
+/* ── TOAST ───────────────────────────────── */
+#toastWrap{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  z-index:500;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none;
+}
+.toast{
+  background:var(--text);color:#fff;padding:10px 20px;border-radius:9px;
+  font-size:12px;font-weight:700;box-shadow:var(--sh-lg);
+  animation:tIn .25s ease;pointer-events:auto;white-space:nowrap;
+}
+@keyframes tIn{from{opacity:0;transform:translateY(12px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ── SETTING ROW ─────────────────────────── */
+.setting-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid var(--border);
+}
+.setting-row:last-child{border-bottom:none;}
+.setting-lbl{font-size:12px;font-weight:700;}
+.setting-desc{font-size:10px;color:var(--muted);margin-top:1px;}
+
+/* ── FEED ────────────────────────────────── */
+.feed-item{display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);}
+.feed-item:last-child{border-bottom:none;}
+.feed-dot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.feed-title{font-size:12px;font-weight:600;margin-bottom:1px;}
+.feed-meta{font-size:10px;color:var(--muted);}
+
+/* ── SQL EDITOR ──────────────────────────── */
+.sql-editor{
+  width:100%;height:120px;padding:12px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:#1a1614;color:#a8ff78;
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  resize:vertical;outline:none;line-height:1.7;
+}
+.sql-result{
+  margin-top:12px;padding:12px;background:#1a1614;border-radius:var(--r-sm);
+  font-family:'JetBrains Mono',monospace;font-size:11px;color:#57e09c;
+  min-height:50px;white-space:pre-wrap;line-height:1.6;
+}
+
+/* ── STAT BLOCK ──────────────────────────── */
+.stat-block{
+  padding:16px 18px;border-radius:var(--r);
+  border:1px solid var(--border);background:var(--surface);
+}
+.stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px;}
+.stat-val{font-size:24px;font-weight:800;font-family:'JetBrains Mono',monospace;}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ── MAPPING ROW ─────────────────────────── */
+.map-row{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 13px;border-radius:var(--r-sm);
+  background:var(--surface2);border:1px solid var(--border);
+  margin-bottom:8px;
+}
+
+/* ── ALERT ITEM ──────────────────────────── */
+.alert-item{
+  display:flex;gap:11px;padding:12px;border-radius:var(--r-sm);
+  border:1px solid var(--border);margin-bottom:9px;cursor:pointer;transition:.12s;
+}
+.alert-item:hover{background:var(--surface2);}
+.alert-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.alert-title{font-size:12px;font-weight:700;margin-bottom:2px;}
+.alert-desc{font-size:11px;color:var(--text2);}
+.alert-time{font-size:10px;color:var(--muted);margin-top:3px;}
+
+/* ── REPORT BUILDER ──────────────────────── */
+.report-out{
+  width:100%;min-height:200px;padding:14px;
+  border:1px solid var(--border);border-radius:var(--r-sm);
+  background:var(--surface2);font-family:inherit;font-size:12px;
+  color:var(--text);resize:vertical;outline:none;line-height:1.7;
+}
+
+/* ── EMPTY STATE ─────────────────────────── */
+.empty{text-align:center;padding:50px 20px;color:var(--muted);}
+.empty-icon{font-size:38px;margin-bottom:10px;}
+.empty h3{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:5px;}
+.empty p{font-size:12px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ SIDEBAR ═══════════ -->
+<nav id="sidebar">
+  <div class="sb-logo">
+    <div class="sb-logo-name">OperaDesk</div>
+    <div class="sb-logo-tag">MIS &amp; Data Analyst Workspace</div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Workspace</div>
+    <div class="sb-item active" data-page="home" onclick="go(this)">
+      <div class="sb-icon">🏠</div>Home
+    </div>
+    <div class="sb-item" data-page="upload" onclick="go(this)">
+      <div class="sb-icon">📂</div>Upload Data
+    </div>
+    <div class="sb-item" data-page="explorer" onclick="go(this)">
+      <div class="sb-icon">🔍</div>Data Explorer
+    </div>
+    <div class="sb-item" data-page="sql" onclick="go(this)">
+      <div class="sb-icon">💾</div>SQL Query
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Analytics</div>
+    <div class="sb-item" data-page="dashboard" onclick="go(this)">
+      <div class="sb-icon">📊</div>Dashboard
+    </div>
+    <div class="sb-item" data-page="kpi" onclick="go(this)">
+      <div class="sb-icon">📈</div>KPI Tracker
+    </div>
+    <div class="sb-item" data-page="validation" onclick="go(this)">
+      <div class="sb-icon">✅</div>Validation
+      <span class="sb-badge warn" id="validBadge">0</span>
+    </div>
+  </div>
+
+  <div class="sb-section">
+    <div class="sb-section-label">Output</div>
+    <div class="sb-item" data-page="reports" onclick="go(this)">
+      <div class="sb-icon">📝</div>Report Builder
+    </div>
+    <div class="sb-item" data-page="export" onclick="go(this)">
+      <div class="sb-icon">⬇</div>Export Center
+    </div>
+    <div class="sb-item" data-page="mapping" onclick="go(this)">
+      <div class="sb-icon">🗂</div>Data Mapping
+    </div>
+    <div class="sb-item" data-page="settings" onclick="go(this)">
+      <div class="sb-icon">⚙</div>Settings
+    </div>
+  </div>
+
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar">BS</div>
+      <div>
+        <div class="sb-uname">Bhaskar Sharma</div>
+        <div class="sb-urole">MIS Analyst · StrategINK</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════ MAIN ═══════════ -->
+<div id="main">
+
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <div class="tb-left">
+      <div class="tb-title" id="tbTitle">Home</div>
+      <div class="tb-crumb" id="tbCrumb">OperaDesk › Workspace › Home</div>
+    </div>
+    <div class="tb-right">
+      <div class="live-dot">Live</div>
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="ib" onclick="openDrawer()" title="Alerts"><span>🔔</span><div class="ib-badge"></div></div>
+      <button class="btn-sec" onclick="go(document.querySelector('[data-page=upload]'))">+ Upload File</button>
+      <button class="btn-primary" onclick="go(document.querySelector('[data-page=export]'))">⬇ Export</button>
+    </div>
+  </header>
+
+  <!-- ═══════════ CONTENT ═══════════ -->
+  <div id="content">
+
+    <!-- ▸ HOME ───────────────────────── -->
+    <div class="page active" id="pg-home">
+      <div class="g4 mb20">
+        <div class="kc kv">
+          <div class="kc-top"><div><div class="kc-label">Total Records</div><div class="kc-val" id="hk1">—</div><div class="kc-delta up" id="hk1d">Upload a file to begin</div></div><div class="kc-icon">📊</div></div>
+          <div class="kc-bar"></div>
+        </div>
+        <div class="kc ke">
+          <div class="kc-top"><div><div class="kc-label">Columns</div><div class="kc-val" id="hk2">—</div><div class="kc-delta" id="hk2d" style="color:var(--muted)">No file loaded</div></div><div class="kc-icon">📋</div></div>
+          <div class="kc-bar"></div>
+        </div>
+        <div class="kc ko">
+          <div class="kc-top"><div><div class="kc-label">Issues Found</div><div class="kc-val" id="hk3">—</div><div class="kc-delta" id="hk3d" style="color:var(--muted)">Run validation first</div></div><div class="kc-icon">⚠️</div></div>
+          <div class="kc-bar"></div>
+        </div>
+        <div class="kc kr">
+          <div class="kc-top"><div><div class="kc-label">Duplicates</div><div class="kc-val" id="hk4">—</div><div class="kc-delta" id="hk4d" style="color:var(--muted)">Run validation first</div></div><div class="kc-icon">🔁</div></div>
+          <div class="kc-bar"></div>
+        </div>
+      </div>
+
+      <div class="g21 mb20">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-title">Quick Start</div><div class="card-sub">Your MIS & Data workflow in 4 steps</div></div></div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:var(--r-sm);background:var(--violet-lt);border:1px solid rgba(109,40,217,.15);cursor:pointer;" onclick="go(document.querySelector('[data-page=upload]'))">
+              <div style="width:34px;height:34px;background:var(--violet);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📂</div>
+              <div><div style="font-size:12px;font-weight:700;color:var(--violet);">Step 1 — Upload your CSV or Excel file</div><div style="font-size:10px;color:var(--text2);margin-top:1px;">Drag & drop any .csv or .xlsx file. Data loads instantly.</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:var(--r-sm);background:var(--emerald-lt);border:1px solid rgba(5,150,105,.15);cursor:pointer;" onclick="go(document.querySelector('[data-page=validation]'))">
+              <div style="width:34px;height:34px;background:var(--emerald);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">✅</div>
+              <div><div style="font-size:12px;font-weight:700;color:var(--emerald);">Step 2 — Validate & clean your data</div><div style="font-size:10px;color:var(--text2);margin-top:1px;">Find nulls, duplicates, format errors automatically.</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:var(--r-sm);background:var(--sky-lt);border:1px solid rgba(2,132,199,.15);cursor:pointer;" onclick="go(document.querySelector('[data-page=dashboard]'))">
+              <div style="width:34px;height:34px;background:var(--sky);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📊</div>
+              <div><div style="font-size:12px;font-weight:700;color:var(--sky);">Step 3 — Analyse with live charts & KPIs</div><div style="font-size:10px;color:var(--text2);margin-top:1px;">Auto-generated dashboard from your file's columns.</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:var(--r-sm);background:var(--orange-lt);border:1px solid rgba(234,88,12,.15);cursor:pointer;" onclick="go(document.querySelector('[data-page=export]'))">
+              <div style="width:34px;height:34px;background:var(--orange);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">⬇</div>
+              <div><div style="font-size:12px;font-weight:700;color:var(--orange);">Step 4 — Export cleaned data or report</div><div style="font-size:10px;color:var(--text2);margin-top:1px;">Download as CSV, Excel, or copy report text for Word/PPT.</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Formula Reference</div><span class="tag">Click to copy</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;" id="formulaList"></div>
+        </div>
+      </div>
+
+      <div class="card mb14">
+        <div class="card-hd"><div class="card-title">Recent Activity</div></div>
+        <div id="activityFeed">
+          <div class="feed-item">
+            <div class="feed-dot" style="background:var(--violet-lt)">💡</div>
+            <div><div class="feed-title">Welcome to OperaDesk</div><div class="feed-meta">Upload a CSV or Excel file to get started · Now</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ UPLOAD ──────────────────────── -->
+    <div class="page" id="pg-upload">
+      <div class="g2 mb20">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-title">Upload CSV or Excel File</div><div class="card-sub">Your data stays in your browser — nothing is sent to any server</div></div></div>
+          <label class="upload-zone" id="dropZone">
+            <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" onchange="handleFile(this.files[0])">
+            <div class="upload-icon">📂</div>
+            <div class="upload-title">Drop your file here or click to browse</div>
+            <div class="upload-sub">Supports .csv · .xlsx · .xls</div>
+          </label>
+          <div id="fileInfo" style="margin-top:14px;display:none;">
+            <div style="padding:12px 14px;background:var(--emerald-lt);border-radius:var(--r-sm);border:1px solid rgba(5,150,105,.2);">
+              <div style="font-size:12px;font-weight:700;color:var(--emerald);" id="fileName">—</div>
+              <div style="font-size:10px;color:var(--text2);margin-top:2px;" id="fileMeta">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Or paste CSV data directly</div></div>
+          <textarea class="report-out" id="csvPaste" placeholder="Paste CSV content here...&#10;&#10;Example:&#10;Name,Dept,Salary,Date&#10;Bhaskar,MIS,45000,2026-01-01&#10;Rahul,Sales,52000,2026-01-15" style="height:160px;"></textarea>
+          <button class="btn-primary" style="margin-top:10px;width:100%;" onclick="parsePaste()">Parse Pasted Data</button>
+        </div>
+      </div>
+
+      <div class="card" id="previewCard" style="display:none;">
+        <div class="card-hd">
+          <div><div class="card-title">Data Preview</div><div class="card-sub" id="previewMeta">—</div></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-sec" onclick="go(document.querySelector('[data-page=validation]'))">Run Validation →</button>
+            <button class="btn-primary" onclick="go(document.querySelector('[data-page=dashboard]'))">View Dashboard →</button>
+          </div>
+        </div>
+        <div class="tbl-wrap"><table><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ▸ DATA EXPLORER ───────────────── -->
+    <div class="page" id="pg-explorer">
+      <div class="toolbar mb14">
+        <input class="search" id="explorerSearch" placeholder="🔍  Search across all columns…" oninput="filterExplorer(this.value)">
+        <select class="chip" style="padding:7px 10px;" id="colFilter" onchange="filterExplorer(document.getElementById('explorerSearch').value)"><option value="">All Columns</option></select>
+        <button class="chip" onclick="sortExplorerBy()">Sort ↕</button>
+        <button class="chip on" id="rowCount">0 rows</button>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap" style="max-height:520px;overflow-y:auto;">
+          <table><thead id="explorerHead"></thead><tbody id="explorerBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ SQL ─────────────────────────── -->
+    <div class="page" id="pg-sql">
+      <div class="g21 mb14">
+        <div class="card">
+          <div class="card-hd">
+            <div><div class="card-title">SQL Query Runner</div><div class="card-sub">Query your uploaded data using SQL-like syntax</div></div>
+            <button class="btn-primary" onclick="runSQL()">▶ Run Query</button>
+          </div>
+          <textarea class="sql-editor" id="sqlInput">SELECT * FROM data LIMIT 20</textarea>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="chip" onclick="sqlSnippet('SELECT * FROM data LIMIT 20')">SELECT *</button>
+            <button class="chip" onclick="sqlSnippet('SELECT * FROM data WHERE ')">WHERE filter</button>
+            <button class="chip" onclick="sqlSnippet('SELECT col, COUNT(*) as count FROM data GROUP BY col')">GROUP BY</button>
+            <button class="chip" onclick="sqlSnippet('SELECT * FROM data ORDER BY col DESC')">ORDER BY</button>
+            <button class="chip" onclick="sqlSnippet('SELECT * FROM data WHERE col IS NULL')">Find NULLs</button>
+          </div>
+          <div class="sql-result" id="sqlResult">-- Upload a file first, then run queries here</div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Available Columns</div></div>
+          <div id="sqlCols" style="display:flex;flex-direction:column;gap:5px;">
+            <div class="empty"><div class="empty-icon">💾</div><p>Upload a file to see columns</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="sqlResultCard" style="display:none;">
+        <div class="card-hd"><div class="card-title">Query Results</div><span class="tag" id="sqlRowCount">0 rows</span></div>
+        <div class="tbl-wrap" style="max-height:380px;overflow-y:auto;">
+          <table><thead id="sqlResHead"></thead><tbody id="sqlResBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ DASHBOARD ───────────────────── -->
+    <div class="page" id="pg-dashboard">
+      <div id="dashEmpty" class="card mb20">
+        <div class="empty"><div class="empty-icon">📊</div><h3>No data loaded yet</h3><p>Upload a CSV or Excel file to generate your dashboard automatically.</p><br><button class="btn-primary" onclick="go(document.querySelector('[data-page=upload]'))">Upload File</button></div>
+      </div>
+      <div id="dashContent" style="display:none;">
+        <div class="g4 mb20" id="dashKPIs"></div>
+        <div class="g21 mb14">
+          <div class="card">
+            <div class="card-hd">
+              <div><div class="card-title">Column Distribution</div><div class="card-sub" id="chartSub">Select a column to chart</div></div>
+              <select class="chip" style="padding:7px 10px;" id="chartColSelect" onchange="renderBarChart()"></select>
+            </div>
+            <canvas id="barChart" height="180"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Data Overview</div></div>
+            <canvas id="pieChart" height="200"></canvas>
+          </div>
+        </div>
+        <div class="card mb14">
+          <div class="card-hd"><div class="card-title">Column Statistics</div></div>
+          <div class="tbl-wrap"><table><thead><tr><th>Column</th><th>Type</th><th>Filled</th><th>Empty</th><th>Unique</th><th>Fill %</th></tr></thead><tbody id="statsTbody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ KPI ─────────────────────────── -->
+    <div class="page" id="pg-kpi">
+      <div id="kpiEmpty" class="card mb20">
+        <div class="empty"><div class="empty-icon">📈</div><h3>No data loaded yet</h3><p>Upload a file to track KPIs from your real data.</p><br><button class="btn-primary" onclick="go(document.querySelector('[data-page=upload]'))">Upload File</button></div>
+      </div>
+      <div id="kpiContent" style="display:none;">
+        <div class="g4 mb20" id="kpiCards"></div>
+        <div class="g2 mb14">
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Column Fill Rate (Health)</div></div>
+            <div id="kpiProgress"></div>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Data Quality Score</div></div>
+            <canvas id="kpiRadar" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ VALIDATION ──────────────────── -->
+    <div class="page" id="pg-validation">
+      <div id="validEmpty" class="card mb20">
+        <div class="empty"><div class="empty-icon">✅</div><h3>No data to validate</h3><p>Upload a file first, then run validation to find issues.</p><br><button class="btn-primary" onclick="go(document.querySelector('[data-page=upload]'))">Upload File</button></div>
+      </div>
+      <div id="validContent" style="display:none;">
+        <div class="g3 mb14" id="validStats"></div>
+        <div class="card mb14">
+          <div class="card-hd">
+            <div><div class="card-title">Validation Results</div><div class="card-sub">All issues found in your data</div></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-sec" onclick="runValidation()">▶ Re-run</button>
+              <button class="btn-primary" onclick="exportValidationReport()">⬇ Export Issues</button>
+            </div>
+          </div>
+          <div class="tbl-wrap"><table><thead><tr><th>Row</th><th>Column</th><th>Issue</th><th>Value</th><th>Severity</th></tr></thead><tbody id="validTbody"></tbody></table></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ REPORT BUILDER ──────────────── -->
+    <div class="page" id="pg-reports">
+      <div class="g2 mb14">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-title">Auto-Generate Report</div><div class="card-sub">Creates a text summary you can paste into Word, PPT, or email</div></div></div>
+          <div class="fg"><label class="fl">Report Title</label><input class="fi" id="rTitle" value="MIS Data Analysis Report"></div>
+          <div class="fg"><label class="fl">Prepared By</label><input class="fi" id="rAuthor" value="Bhaskar Sharma"></div>
+          <div class="fg"><label class="fl">Department</label><input class="fi" id="rDept" value="Operations / MIS"></div>
+          <div class="fg">
+            <label class="fl">Report Type</label>
+            <select class="fs" id="rType">
+              <option>Executive Summary</option>
+              <option>Data Quality Report</option>
+              <option>KPI Summary</option>
+              <option>Validation Report</option>
+              <option>Monthly MIS Report</option>
+            </select>
+          </div>
+          <button class="btn-primary" style="width:100%;" onclick="generateReport()">⚡ Generate Report</button>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Generated Report</div><div style="display:flex;gap:7px;"><button class="btn-sec" onclick="copyReport()">Copy</button><button class="btn-primary" onclick="downloadReport()">⬇ .txt</button></div></div>
+          <textarea class="report-out" id="reportOut" style="height:320px;" placeholder="Click 'Generate Report' to create a text summary from your data..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ EXPORT CENTER ───────────────── -->
+    <div class="page" id="pg-export">
+      <div class="g3 mb20">
+        <div class="card" style="border-top:3px solid var(--emerald);">
+          <div style="font-size:28px;margin-bottom:10px;">📄</div>
+          <div class="card-title" style="margin-bottom:4px;">Export as CSV</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Opens directly in Excel, Google Sheets</div>
+          <button class="btn-primary" style="width:100%;" onclick="exportCSV()">⬇ Download CSV</button>
+        </div>
+        <div class="card" style="border-top:3px solid var(--violet);">
+          <div style="font-size:28px;margin-bottom:10px;">📊</div>
+          <div class="card-title" style="margin-bottom:4px;">Export as Excel</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Full .xlsx file with formatting</div>
+          <button class="btn-primary" style="width:100%;" onclick="exportExcel()">⬇ Download Excel</button>
+        </div>
+        <div class="card" style="border-top:3px solid var(--orange);">
+          <div style="font-size:28px;margin-bottom:10px;">📋</div>
+          <div class="card-title" style="margin-bottom:4px;">Copy for Excel</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Tab-separated, paste directly into cells</div>
+          <button class="btn-primary" style="width:100%;" onclick="copyForExcel()">📋 Copy to Clipboard</button>
+        </div>
+      </div>
+      <div class="g2 mb14">
+        <div class="card" style="border-top:3px solid var(--sky);">
+          <div style="font-size:28px;margin-bottom:10px;">📝</div>
+          <div class="card-title" style="margin-bottom:4px;">Export Validation Report</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">All issues found — paste into Word or share</div>
+          <button class="btn-primary" style="width:100%;" onclick="exportValidationReport()">⬇ Download Validation Report</button>
+        </div>
+        <div class="card" style="border-top:3px solid var(--rose);">
+          <div style="font-size:28px;margin-bottom:10px;">📑</div>
+          <div class="card-title" style="margin-bottom:4px;">Export Column Stats</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">Column analysis ready for Power BI import</div>
+          <button class="btn-primary" style="width:100%;" onclick="exportStats()">⬇ Download Stats CSV</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Export Preview</div><div class="card-sub" id="exportPreviewMeta">Upload a file to preview export</div></div>
+        <div class="tbl-wrap" style="max-height:300px;overflow-y:auto;">
+          <table><thead id="exportHead"></thead><tbody id="exportBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ DATA MAPPING ────────────────── -->
+    <div class="page" id="pg-mapping">
+      <div class="g2 mb14">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-title">Column Mapping Planner</div><div class="card-sub">Plan XLOOKUP / VLOOKUP mappings before doing them in Excel</div></div><button class="btn-primary" onclick="addMapping()">+ Add</button></div>
+          <div id="mappingList"></div>
+          <div id="mappingEmpty" class="empty" style="padding:30px 0;"><div class="empty-icon">🗂</div><p>Add your first mapping below</p></div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">New Mapping</div></div>
+          <div class="fg"><label class="fl">Source Column (your file)</label><input class="fi" id="mapSrc" placeholder="e.g. emp_id"></div>
+          <div class="fg"><label class="fl">Target Column (destination)</label><input class="fi" id="mapTgt" placeholder="e.g. employee_code"></div>
+          <div class="fg"><label class="fl">Transform Rule</label><select class="fs" id="mapRule"><option>Direct copy</option><option>XLOOKUP reference</option><option>VLOOKUP reference</option><option>UPPER()</option><option>TRIM() + LOWER()</option><option>Date format convert</option><option>Number to text</option><option>Remove duplicates</option></select></div>
+          <div class="fg"><label class="fl">Notes</label><input class="fi" id="mapNote" placeholder="Optional notes..."></div>
+          <button class="btn-primary" style="width:100%;" onclick="saveMapping()">Save Mapping</button>
+          <div style="margin-top:12px;"><button class="btn-sec" style="width:100%;" onclick="exportMappingPlan()">⬇ Export Mapping Plan</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▸ SETTINGS ────────────────────── -->
+    <div class="page" id="pg-settings">
+      <div class="g2">
+        <div>
+          <div class="card mb14">
+            <div class="card-hd"><div class="card-title">Profile</div></div>
+            <div class="fg"><label class="fl">Full Name</label><input class="fi" value="Bhaskar Sharma"></div>
+            <div class="fr">
+              <div class="fg"><label class="fl">Email</label><input class="fi" value="bhaskarsharma37473@gmail.com"></div>
+              <div class="fg"><label class="fl">Role</label><input class="fi" value="MIS Analyst"></div>
+            </div>
+            <div class="fg"><label class="fl">Organisation</label><input class="fi" value="StrategINK"></div>
+            <button class="btn-primary" onclick="toast('✅ Profile saved!')">Save Profile</button>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">Data Settings</div></div>
+            <div class="setting-row">
+              <div><div class="setting-lbl">Auto-validate on upload</div><div class="setting-desc">Run validation as soon as a file is loaded</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-lbl">Show row numbers</div><div class="setting-desc">Display row index in all tables</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-lbl">Timestamp exports</div><div class="setting-desc">Add date to exported filenames</div></div>
+              <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-lbl">Highlight duplicates</div><div class="setting-desc">Mark duplicate rows in explorer</div></div>
+              <div class="toggle" onclick="this.classList.toggle('on')"></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card mb14">
+            <div class="card-hd"><div class="card-title">Export Settings</div></div>
+            <div class="fg"><label class="fl">Default export format</label><select class="fs"><option>.csv</option><option>.xlsx</option></select></div>
+            <div class="fg"><label class="fl">CSV delimiter</label><select class="fs"><option>Comma (,)</option><option>Semicolon (;)</option><option>Tab</option><option>Pipe (|)</option></select></div>
+            <div class="fg"><label class="fl">Date format in exports</label><select class="fs"><option>YYYY-MM-DD</option><option>DD-MM-YYYY</option><option>MM/DD/YYYY</option><option>DD/MM/YYYY</option></select></div>
+            <button class="btn-primary" onclick="toast('✅ Export settings saved!')">Save</button>
+          </div>
+          <div class="card">
+            <div class="card-hd"><div class="card-title">About OperaDesk</div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:12px;color:var(--text2);">
+              <div>Version: <strong>2.0 — Real Data Edition</strong></div>
+              <div>Built for: <strong>MIS & Data Analyst workflows</strong></div>
+              <div>Data storage: <strong>Browser only — no server, 100% private</strong></div>
+              <div>Supports: <strong>CSV, Excel (.xlsx, .xls)</strong></div>
+              <div>Exports: <strong>CSV, Excel, Text reports</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+</div><!-- end main -->
+
+<!-- DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="drawer-hd"><h3>🔔 Alerts</h3><button class="close-x" onclick="closeDrawer()">✕</button></div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modalBg" onclick="closeMod(event)">
+  <div class="modal"><div class="modal-hd"><h3 class="modal-title" id="modTitle"></h3><button class="close-x" onclick="closeMod()">✕</button></div><div id="modBody"></div></div>
+</div>
+
+<!-- TOAST -->
+<div id="toastWrap"></div>
+
+<script>
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+let DATA = [];        // array of row objects
+let COLS = [];        // column names
+let FILENAME = '';
+let validationResults = [];
+let mappings = [];
+let barChartInst = null, pieChartInst = null, radarInst = null;
+let explorerSort = { col: null, asc: true };
+
+// ══════════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════════
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('en-IN', { hour12: false });
+}, 1000);
+
+// ══════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════
+const pageMeta = {
+  home:       ['Home',          'Workspace › Home'],
+  upload:     ['Upload Data',   'Workspace › Upload Data'],
+  explorer:   ['Data Explorer', 'Workspace › Data Explorer'],
+  sql:        ['SQL Query',     'Workspace › SQL Query'],
+  dashboard:  ['Dashboard',     'Analytics › Dashboard'],
+  kpi:        ['KPI Tracker',   'Analytics › KPI Tracker'],
+  validation: ['Validation',    'Analytics › Validation'],
+  reports:    ['Report Builder','Output › Report Builder'],
+  export:     ['Export Center', 'Output › Export Center'],
+  mapping:    ['Data Mapping',  'Output › Data Mapping'],
+  settings:   ['Settings',      'Output › Settings'],
+};
+
+function go(el) {
+  if (!el) return;
+  const page = el.dataset.page;
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + page).classList.add('active');
+  const m = pageMeta[page];
+  document.getElementById('tbTitle').textContent = m[0];
+  document.getElementById('tbCrumb').textContent = 'OperaDesk › ' + m[1];
+  closeDrawer();
+  if (page === 'dashboard') refreshDashboard();
+  if (page === 'kpi') refreshKPI();
+  if (page === 'validation' && DATA.length) runValidation();
+  if (page === 'explorer') refreshExplorer();
+  if (page === 'sql') refreshSQLCols();
+  if (page === 'export') refreshExportPreview();
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+function toast(msg, color) {
+  const w = document.getElementById('toastWrap');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  if (color) t.style.background = color;
+  t.textContent = msg;
+  w.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+// ══════════════════════════════════════
+//  DRAWER / MODAL
+// ══════════════════════════════════════
+function openDrawer() {
+  renderAlerts();
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() { document.getElementById('drawer').classList.remove('open'); }
+
+function openMod(title, html) {
+  document.getElementById('modTitle').textContent = title;
+  document.getElementById('modBody').innerHTML = html;
+  document.getElementById('modalBg').classList.add('open');
+}
+function closeMod(e) {
+  if (!e || e.target === document.getElementById('modalBg'))
+    document.getElementById('modalBg').classList.remove('open');
+}
+
+// ══════════════════════════════════════
+//  FORMULA REFERENCE
+// ══════════════════════════════════════
+const formulas = [
+  { f: '=XLOOKUP(lookup,array,return)', desc: 'Multi-column lookup', c: 'var(--violet)' },
+  { f: '=VLOOKUP(value,range,col,0)', desc: 'Classic vertical lookup', c: 'var(--violet)' },
+  { f: '=SUMIFS(sum_rng,crit_rng,crit)', desc: 'Conditional sum', c: 'var(--emerald)' },
+  { f: '=COUNTIFS(rng1,crit1,rng2,crit2)', desc: 'Count with criteria', c: 'var(--sky)' },
+  { f: '=IFERROR(formula,"")', desc: 'Handle errors gracefully', c: 'var(--orange)' },
+  { f: '=TRIM(UPPER(A2))', desc: 'Clean & standardize text', c: 'var(--gold)' },
+  { f: '=TEXT(A2,"DD-MM-YYYY")', desc: 'Format dates', c: 'var(--rose)' },
+  { f: '=QUERY(data,"SELECT...")', desc: 'Google Sheets SQL', c: 'var(--emerald)' },
+];
+
+document.getElementById('formulaList').innerHTML = formulas.map(f => `
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-radius:6px;background:var(--surface2);cursor:pointer;border:1px solid var(--border);" onclick="copyF('${f.f}')">
+    <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:${f.c};">${f.f}</span>
+    <span style="font-size:10px;color:var(--muted);">${f.desc}</span>
+  </div>`).join('');
+
+function copyF(f) {
+  if (navigator.clipboard) navigator.clipboard.writeText(f);
+  toast('📋 Copied: ' + f.substring(0, 30) + (f.length > 30 ? '…' : ''));
+}
+
+// ══════════════════════════════════════
+//  FILE UPLOAD
+// ══════════════════════════════════════
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
+  if (!file) return;
+  FILENAME = file.name;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    const reader = new FileReader();
+    reader.onload = e => parseCSV(e.target.result);
+    reader.readAsText(file);
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    const reader = new FileReader();
+    reader.onload = e => parseExcel(e.target.result);
+    reader.readAsArrayBuffer(file);
+  } else {
+    toast('⚠ Unsupported file type. Use CSV or Excel.', '#e11d48');
+  }
+}
+
+function parseCSV(text) {
+  const result = Papa.parse(text, { header: true, skipEmptyLines: true, dynamicTyping: true });
+  loadData(result.data, result.meta.fields);
+}
+
+function parseExcel(buf) {
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+  const cols = json.length ? Object.keys(json[0]) : [];
+  loadData(json, cols);
+}
+
+function parsePaste() {
+  const text = document.getElementById('csvPaste').value.trim();
+  if (!text) { toast('⚠ Nothing to parse', '#e11d48'); return; }
+  FILENAME = 'pasted_data.csv';
+  parseCSV(text);
+}
+
+function loadData(rows, cols) {
+  DATA = rows;
+  COLS = cols;
+  renderPreview();
+  updateHomeKPIs();
+  addActivity(`📂 Loaded: ${FILENAME} — ${DATA.length.toLocaleString()} rows, ${COLS.length} columns`);
+  toast(`✅ Loaded ${DATA.length.toLocaleString()} rows from ${FILENAME}`, 'var(--emerald)');
+  document.getElementById('fileInfo').style.display = 'block';
+  document.getElementById('fileName').textContent = FILENAME;
+  document.getElementById('fileMeta').textContent = `${DATA.length.toLocaleString()} rows · ${COLS.length} columns`;
+  document.getElementById('previewCard').style.display = 'block';
+  runValidation(true); // silent
+}
+
+function renderPreview() {
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  head.innerHTML = '<tr>' + COLS.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  const sample = DATA.slice(0, 50);
+  body.innerHTML = sample.map((r, i) =>
+    '<tr>' + COLS.map(c => `<td>${r[c] === null || r[c] === undefined || r[c] === '' ? '<span style="color:var(--rose);font-size:10px;">NULL</span>' : r[c]}</td>`).join('') + '</tr>'
+  ).join('');
+  document.getElementById('previewMeta').textContent = `Showing ${Math.min(50, DATA.length)} of ${DATA.length.toLocaleString()} rows · ${COLS.length} columns`;
+}
+
+// ══════════════════════════════════════
+//  HOME KPIs
+// ══════════════════════════════════════
+function updateHomeKPIs() {
+  animCount('hk1', DATA.length);
+  document.getElementById('hk2').textContent = COLS.length;
+  document.getElementById('hk1d').textContent = `${COLS.length} columns · ${FILENAME}`;
+  document.getElementById('hk2d').textContent = COLS.join(', ').substring(0, 40) + (COLS.join(', ').length > 40 ? '…' : '');
+  // duplicates
+  const seen = new Set(), dups = [];
+  DATA.forEach((r, i) => {
+    const key = JSON.stringify(r);
+    if (seen.has(key)) dups.push(i + 1);
+    else seen.add(key);
+  });
+  document.getElementById('hk4').textContent = dups.length;
+  document.getElementById('hk4d').innerHTML = dups.length > 0
+    ? `<span class="dn">⚠ ${dups.length} duplicate rows found</span>`
+    : '<span class="up">✓ No duplicates</span>';
+}
+
+function animCount(id, target) {
+  let v = 0, step = Math.max(1, Math.ceil(target / 60));
+  const el = document.getElementById(id);
+  const t = setInterval(() => {
+    v = Math.min(v + step, target);
+    el.textContent = v.toLocaleString();
+    if (v >= target) clearInterval(t);
+  }, 18);
+}
+
+// ══════════════════════════════════════
+//  ACTIVITY FEED
+// ══════════════════════════════════════
+const activities = [];
+function addActivity(msg) {
+  activities.unshift({ msg, time: new Date().toLocaleTimeString() });
+  const feed = document.getElementById('activityFeed');
+  feed.innerHTML = activities.slice(0, 8).map(a => `
+    <div class="feed-item">
+      <div class="feed-dot" style="background:var(--violet-lt)">⚡</div>
+      <div><div class="feed-title">${a.msg}</div><div class="feed-meta">${a.time}</div></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+//  DATA EXPLORER
+// ══════════════════════════════════════
+function refreshExplorer() {
+  if (!DATA.length) {
+    document.getElementById('explorerHead').innerHTML = '<tr><th>Upload a file to explore data</th></tr>';
+    document.getElementById('explorerBody').innerHTML = '';
+    return;
+  }
+  // populate column filter
+  const sel = document.getElementById('colFilter');
+  sel.innerHTML = '<option value="">All Columns</option>' + COLS.map(c => `<option value="${c}">${c}</option>`).join('');
+  filterExplorer('');
+}
+
+function filterExplorer(q) {
+  if (!DATA.length) return;
+  const col = document.getElementById('colFilter').value;
+  let rows = DATA;
+  if (q) {
+    const ql = q.toLowerCase();
+    rows = rows.filter(r =>
+      COLS.some(c => String(r[c] ?? '').toLowerCase().includes(ql))
+    );
+  }
+  if (col) {
+    rows = rows.filter(r => String(r[col] ?? '').toLowerCase().includes(
+      document.getElementById('explorerSearch').value.toLowerCase()
+    ));
+  }
+  document.getElementById('rowCount').textContent = rows.length + ' rows';
+  document.getElementById('explorerHead').innerHTML =
+    '<tr>' + COLS.map(c => `<th onclick="sortBy('${c}')" style="cursor:pointer;">${c} ↕</th>`).join('') + '</tr>';
+  document.getElementById('explorerBody').innerHTML = rows.slice(0, 500).map((r, i) =>
+    '<tr>' + COLS.map(c => {
+      const v = r[c];
+      if (v === null || v === undefined || v === '') return `<td><span style="color:var(--rose);font-size:10px;">NULL</span></td>`;
+      return `<td>${v}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+}
+
+function sortBy(col) {
+  if (explorerSort.col === col) explorerSort.asc = !explorerSort.asc;
+  else { explorerSort.col = col; explorerSort.asc = true; }
+  DATA.sort((a, b) => {
+    const av = a[col] ?? '', bv = b[col] ?? '';
+    if (av < bv) return explorerSort.asc ? -1 : 1;
+    if (av > bv) return explorerSort.asc ? 1 : -1;
+    return 0;
+  });
+  filterExplorer(document.getElementById('explorerSearch').value);
+  toast(`Sorted by ${col} ${explorerSort.asc ? '↑' : '↓'}`);
+}
+function sortExplorerBy() { if (COLS.length) sortBy(COLS[0]); }
+
+// ══════════════════════════════════════
+//  SQL RUNNER (JS-based)
+// ══════════════════════════════════════
+function refreshSQLCols() {
+  if (!DATA.length) return;
+  document.getElementById('sqlCols').innerHTML = COLS.map(c => {
+    const sample = DATA.slice(0, 5).map(r => r[c]).filter(v => v !== null && v !== undefined && v !== '');
+    const type = typeof sample[0] === 'number' ? 'number' : 'text';
+    return `<div style="padding:8px 11px;border-radius:6px;background:var(--surface2);cursor:pointer;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;" onclick="sqlInsertCol('${c}')">
+      <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--violet);">${c}</span>
+      <span style="font-size:9px;color:var(--muted);">${type}</span>
+    </div>`;
+  }).join('');
+}
+
+function sqlInsertCol(col) {
+  const ta = document.getElementById('sqlInput');
+  ta.value += col;
+  ta.focus();
+}
+
+function sqlSnippet(s) {
+  document.getElementById('sqlInput').value = s;
+}
+
+function runSQL() {
+  if (!DATA.length) { toast('⚠ Upload a file first', '#e11d48'); return; }
+  const raw = document.getElementById('sqlInput').value.trim().toUpperCase();
+  let rows = [...DATA];
+  try {
+    // WHERE
+    const whereM = raw.match(/WHERE\s+(.+?)(?:\s+(?:GROUP|ORDER|LIMIT)|$)/);
+    if (whereM) {
+      const cond = whereM[1].trim();
+      // IS NULL
+      const nullM = cond.match(/(\w+)\s+IS\s+NULL/i);
+      const notNullM = cond.match(/(\w+)\s+IS\s+NOT\s+NULL/i);
+      const eqM = cond.match(/(\w+)\s*=\s*'?([^']+)'?/i);
+      const gtM = cond.match(/(\w+)\s*>\s*(\d+(?:\.\d+)?)/i);
+      const ltM = cond.match(/(\w+)\s*<\s*(\d+(?:\.\d+)?)/i);
+      if (nullM) { const c = findCol(nullM[1]); if (c) rows = rows.filter(r => r[c] === null || r[c] === undefined || r[c] === ''); }
+      else if (notNullM) { const c = findCol(notNullM[1]); if (c) rows = rows.filter(r => r[c] !== null && r[c] !== undefined && r[c] !== ''); }
+      else if (gtM) { const c = findCol(gtM[1]); if (c) rows = rows.filter(r => Number(r[c]) > Number(gtM[2])); }
+      else if (ltM) { const c = findCol(ltM[1]); if (c) rows = rows.filter(r => Number(r[c]) < Number(ltM[2])); }
+      else if (eqM) { const c = findCol(eqM[1]); if (c) rows = rows.filter(r => String(r[c]).toLowerCase() === eqM[2].toLowerCase()); }
+    }
+    // ORDER BY
+    const orderM = raw.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
+    if (orderM) {
+      const c = findCol(orderM[1]);
+      const asc = !orderM[2] || orderM[2].toUpperCase() === 'ASC';
+      if (c) rows.sort((a, b) => {
+        const av = a[c] ?? '', bv = b[c] ?? '';
+        return asc ? (av < bv ? -1 : av > bv ? 1 : 0) : (bv < av ? -1 : bv > av ? 1 : 0);
+      });
+    }
+    // LIMIT
+    const limitM = raw.match(/LIMIT\s+(\d+)/i);
+    const limit = limitM ? parseInt(limitM[1]) : rows.length;
+    rows = rows.slice(0, limit);
+
+    // SELECT cols
+    const selM = raw.match(/SELECT\s+(.+?)\s+FROM/i);
+    let selCols = COLS;
+    if (selM && selM[1].trim() !== '*') {
+      const parts = selM[1].split(',').map(s => s.trim());
+      selCols = parts.map(p => findCol(p)).filter(Boolean);
+      if (!selCols.length) selCols = COLS;
+    }
+
+    // GROUP BY (simple count)
+    const groupM = raw.match(/GROUP\s+BY\s+(\w+)/i);
+    if (groupM) {
+      const gc = findCol(groupM[1]);
+      if (gc) {
+        const agg = {};
+        DATA.forEach(r => { const k = r[gc] ?? 'NULL'; agg[k] = (agg[k] || 0) + 1; });
+        rows = Object.entries(agg).map(([k, v]) => ({ [gc]: k, count: v }));
+        selCols = [gc, 'count'];
+      }
+    }
+
+    renderSQLResult(rows, selCols, limit);
+    document.getElementById('sqlResult').textContent =
+      `-- ✓ Query OK | ${rows.length} row(s) returned | ${new Date().toLocaleTimeString()}`;
+    addActivity(`💾 SQL query executed — ${rows.length} rows returned`);
+    toast(`▶ ${rows.length} rows returned`, 'var(--emerald)');
+  } catch (e) {
+    document.getElementById('sqlResult').textContent = `-- ✗ Error: ${e.message}`;
+    toast('⚠ Query error: ' + e.message, '#e11d48');
+  }
+}
+
+function findCol(name) {
+  return COLS.find(c => c.toUpperCase() === name.toUpperCase()) || null;
+}
+
+function renderSQLResult(rows, cols, limit) {
+  const card = document.getElementById('sqlResultCard');
+  card.style.display = 'block';
+  document.getElementById('sqlRowCount').textContent = rows.length + ' rows';
+  document.getElementById('sqlResHead').innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  document.getElementById('sqlResBody').innerHTML = rows.map(r =>
+    '<tr>' + cols.map(c => `<td>${r[c] === null || r[c] === undefined || r[c] === '' ? '<span style="color:var(--rose);font-size:10px;">NULL</span>' : r[c]}</td>`).join('') + '</tr>'
+  ).join('');
+}
+
+// ══════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════
+function refreshDashboard() {
+  if (!DATA.length) {
+    document.getElementById('dashEmpty').style.display = 'block';
+    document.getElementById('dashContent').style.display = 'none';
+    return;
+  }
+  document.getElementById('dashEmpty').style.display = 'none';
+  document.getElementById('dashContent').style.display = 'block';
+
+  // KPI cards
+  const numCols = COLS.filter(c => DATA.some(r => typeof r[c] === 'number' && r[c] !== ''));
+  const kpiDiv = document.getElementById('dashKPIs');
+  const colors = ['kv','ke','ko','kr'];
+  const icons = ['📊','📈','💰','🎯'];
+  kpiDiv.innerHTML = numCols.slice(0, 4).map((c, i) => {
+    const vals = DATA.map(r => Number(r[c])).filter(v => !isNaN(v));
+    const sum = vals.reduce((a, b) => a + b, 0);
+    const avg = vals.length ? (sum / vals.length) : 0;
+    return `<div class="kc ${colors[i]}">
+      <div class="kc-top">
+        <div>
+          <div class="kc-label">${c}</div>
+          <div class="kc-val">${sum > 9999 ? (sum/1000).toFixed(1)+'K' : sum.toFixed(1)}</div>
+          <div class="kc-delta">Avg: ${avg.toFixed(2)} · ${vals.length} entries</div>
+        </div>
+        <div class="kc-icon">${icons[i]}</div>
+      </div>
+      <div class="kc-bar"></div>
+    </div>`;
+  }).join('') || `<div class="kc kv" style="grid-column:1/-1;"><div class="kc-top"><div><div class="kc-label">Rows Loaded</div><div class="kc-val">${DATA.length.toLocaleString()}</div><div class="kc-delta up">✓ Data ready</div></div><div class="kc-icon">📊</div></div></div>`;
+
+  // Column for bar chart
+  const sel = document.getElementById('chartColSelect');
+  sel.innerHTML = COLS.map(c => `<option value="${c}">${c}</option>`).join('');
+  renderBarChart();
+
+  // Pie: null vs filled
+  const total = DATA.length * COLS.length;
+  let nulls = 0;
+  DATA.forEach(r => COLS.forEach(c => { if (r[c] === null || r[c] === undefined || r[c] === '') nulls++; }));
+  const filled = total - nulls;
+  if (pieChartInst) pieChartInst.destroy();
+  pieChartInst = new Chart(document.getElementById('pieChart').getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Filled', 'Empty/Null'],
+      datasets: [{ data: [filled, nulls], backgroundColor: ['rgba(5,150,105,.8)', 'rgba(225,29,72,.6)'], borderColor: '#fff', borderWidth: 3, hoverOffset: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: true, cutout: '65%', plugins: { legend: { labels: { color: '#9c9590', font: { size: 11 } } }, tooltip: { backgroundColor: '#fff', borderColor: '#ddd9d2', borderWidth: 1, titleColor: '#1a1614', bodyColor: '#504a44' } } }
+  });
+
+  // Stats table
+  const tbody = document.getElementById('statsTbody');
+  tbody.innerHTML = COLS.map(c => {
+    const vals = DATA.map(r => r[c]);
+    const filled2 = vals.filter(v => v !== null && v !== undefined && v !== '').length;
+    const empty = vals.length - filled2;
+    const unique = new Set(vals).size;
+    const pct = ((filled2 / vals.length) * 100).toFixed(1);
+    const isNum = vals.some(v => typeof v === 'number');
+    const pctColor = pct >= 90 ? 'var(--emerald)' : pct >= 70 ? 'var(--orange)' : 'var(--rose)';
+    return `<tr>
+      <td style="font-weight:700">${c}</td>
+      <td><span class="pill ${isNum ? 'pe' : 'pk'}">${isNum ? 'Number' : 'Text'}</span></td>
+      <td class="mono">${filled2.toLocaleString()}</td>
+      <td class="mono" style="color:var(--rose)">${empty}</td>
+      <td class="mono">${unique}</td>
+      <td><span style="color:${pctColor};font-weight:700;font-family:JetBrains Mono,monospace;font-size:11px;">${pct}%</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderBarChart() {
+  if (!DATA.length) return;
+  const col = document.getElementById('chartColSelect').value;
+  if (!col) return;
+  document.getElementById('chartSub').textContent = `Distribution of: ${col}`;
+  const vals = DATA.map(r => r[col]);
+  const isNum = vals.some(v => typeof v === 'number' && !isNaN(v));
+  let labels, counts;
+  if (isNum) {
+    const nums = vals.filter(v => typeof v === 'number' && !isNaN(v));
+    const min = Math.min(...nums), max = Math.max(...nums);
+    const step = (max - min) / 8 || 1;
+    const buckets = Array.from({ length: 8 }, (_, i) => min + i * step);
+    labels = buckets.map((b, i) => `${Math.round(b)}–${Math.round(b + step)}`);
+    counts = buckets.map((b, i) => nums.filter(n => n >= b && n < b + step + (i === 7 ? 1 : 0)).length);
+  } else {
+    const freq = {};
+    vals.forEach(v => { const k = String(v ?? 'NULL'); freq[k] = (freq[k] || 0) + 1; });
+    const sorted = Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 15);
+    labels = sorted.map(s => s[0]);
+    counts = sorted.map(s => s[1]);
+  }
+  if (barChartInst) barChartInst.destroy();
+  barChartInst = new Chart(document.getElementById('barChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: col, data: counts, backgroundColor: 'rgba(109,40,217,.55)', borderColor: 'rgba(109,40,217,.8)', borderWidth: 1, borderRadius: 5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: labels.length > 8 ? 'y' : 'x',
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#fff', borderColor: '#ddd9d2', borderWidth: 1, titleColor: '#1a1614', bodyColor: '#504a44' } },
+      scales: { x: { ticks: { color: '#9c9590', font: { size: 10 } }, grid: { color: 'rgba(221,217,210,.5)' } }, y: { ticks: { color: '#9c9590', font: { size: 10 } }, grid: { color: 'rgba(221,217,210,.5)' } } }
+    }
+  });
+}
+
+// ══════════════════════════════════════
+//  KPI PAGE
+// ══════════════════════════════════════
+function refreshKPI() {
+  if (!DATA.length) {
+    document.getElementById('kpiEmpty').style.display = 'block';
+    document.getElementById('kpiContent').style.display = 'none';
+    return;
+  }
+  document.getElementById('kpiEmpty').style.display = 'none';
+  document.getElementById('kpiContent').style.display = 'block';
+
+  // Cards
+  const total = DATA.length;
+  const nullCount = DATA.reduce((acc, r) => acc + COLS.filter(c => r[c] === null || r[c] === undefined || r[c] === '').length, 0);
+  const totalCells = total * COLS.length;
+  const fillPct = ((1 - nullCount / totalCells) * 100).toFixed(1);
+  const seen = new Set(), dups = [];
+  DATA.forEach(r => { const k = JSON.stringify(r); if (seen.has(k)) dups.push(1); else seen.add(k); });
+  const dupPct = ((dups.length / total) * 100).toFixed(1);
+
+  document.getElementById('kpiCards').innerHTML = `
+    <div class="kc kv"><div class="kc-top"><div><div class="kc-label">Total Rows</div><div class="kc-val">${total.toLocaleString()}</div><div class="kc-delta up">↑ Data loaded</div></div><div class="kc-icon">📊</div></div><div class="kc-bar"></div></div>
+    <div class="kc ke"><div class="kc-top"><div><div class="kc-label">Fill Rate</div><div class="kc-val">${fillPct}%</div><div class="kc-delta ${fillPct >= 90 ? 'up' : 'fl'}">Data completeness</div></div><div class="kc-icon">✅</div></div><div class="kc-bar"></div></div>
+    <div class="kc ko"><div class="kc-top"><div><div class="kc-label">Columns</div><div class="kc-val">${COLS.length}</div><div class="kc-delta">Fields in dataset</div></div><div class="kc-icon">📋</div></div><div class="kc-bar"></div></div>
+    <div class="kc kr"><div class="kc-top"><div><div class="kc-label">Duplicates</div><div class="kc-val">${dups.length}</div><div class="kc-delta ${dups.length === 0 ? 'up' : 'dn'}">${dups.length === 0 ? '✓ No duplicates' : dupPct + '% of rows'}</div></div><div class="kc-icon">🔁</div></div><div class="kc-bar"></div></div>`;
+
+  // Progress bars
+  const prog = document.getElementById('kpiProgress');
+  prog.innerHTML = COLS.map(c => {
+    const vals = DATA.map(r => r[c]);
+    const filled = vals.filter(v => v !== null && v !== undefined && v !== '').length;
+    const pct = ((filled / DATA.length) * 100).toFixed(1);
+    const color = pct >= 90 ? 'var(--emerald)' : pct >= 70 ? 'var(--orange)' : 'var(--rose)';
+    return `<div class="prog-row">
+      <div class="prog-lbl"><span>${c}</span><span style="color:${color};font-family:JetBrains Mono,monospace;">${pct}%</span></div>
+      <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${color};"></div></div>
+    </div>`;
+  }).join('');
+
+  // Radar chart
+  const radarCols = COLS.slice(0, 6);
+  const radarData = radarCols.map(c => {
+    const vals = DATA.map(r => r[c]).filter(v => v !== null && v !== undefined && v !== '');
+    return ((vals.length / DATA.length) * 100).toFixed(1);
+  });
+  if (radarInst) radarInst.destroy();
+  radarInst = new Chart(document.getElementById('kpiRadar').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: radarCols,
+      datasets: [{ label: 'Fill Rate %', data: radarData, borderColor: 'rgba(109,40,217,.8)', backgroundColor: 'rgba(109,40,217,.12)', pointBackgroundColor: 'var(--violet)', pointRadius: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#9c9590', font: { size: 11 } } } },
+      scales: { r: { min: 0, max: 100, ticks: { color: '#9c9590', font: { size: 9 }, backdropColor: 'transparent' }, grid: { color: 'rgba(221,217,210,.5)' }, pointLabels: { color: '#504a44', font: { size: 10 } } } }
+    }
+  });
+
+  document.getElementById('hk3').textContent = nullCount;
+  document.getElementById('hk3d').innerHTML = nullCount === 0 ? '<span class="up">✓ No null values</span>' : `<span class="dn">${nullCount} empty cells found</span>`;
+}
+
+// ══════════════════════════════════════
+//  VALIDATION
+// ══════════════════════════════════════
+function runValidation(silent) {
+  if (!DATA.length) return;
+  validationResults = [];
+  DATA.forEach((row, i) => {
+    COLS.forEach(col => {
+      const v = row[col];
+      // Null check
+      if (v === null || v === undefined || v === '') {
+        validationResults.push({ row: i + 2, col, issue: 'Empty / Null', value: 'NULL', severity: 'critical' });
+      }
+      // Duplicate-ish: number as string
+      if (typeof v === 'string' && v.trim() !== '' && !isNaN(Number(v))) {
+        validationResults.push({ row: i + 2, col, issue: 'Number stored as text', value: v, severity: 'warning' });
+      }
+      // Whitespace
+      if (typeof v === 'string' && v !== v.trim()) {
+        validationResults.push({ row: i + 2, col, issue: 'Leading/trailing spaces', value: `"${v}"`, severity: 'warning' });
+      }
+    });
+  });
+
+  // Duplicates
+  const seen = new Set();
+  DATA.forEach((r, i) => {
+    const k = JSON.stringify(r);
+    if (seen.has(k)) validationResults.push({ row: i + 2, col: 'ALL', issue: 'Duplicate row', value: 'Same as earlier row', severity: 'critical' });
+    else seen.add(k);
+  });
+
+  const badge = document.getElementById('validBadge');
+  badge.textContent = validationResults.length;
+  badge.style.display = validationResults.length > 0 ? 'inline' : 'none';
+
+  if (!silent) renderValidation();
+  if (!silent) addActivity(`✅ Validation complete — ${validationResults.length} issues found`);
+}
+
+function renderValidation() {
+  if (!DATA.length) { document.getElementById('validEmpty').style.display = 'block'; document.getElementById('validContent').style.display = 'none'; return; }
+  document.getElementById('validEmpty').style.display = 'none';
+  document.getElementById('validContent').style.display = 'block';
+
+  const critical = validationResults.filter(r => r.severity === 'critical').length;
+  const warning = validationResults.filter(r => r.severity === 'warning').length;
+  document.getElementById('validStats').innerHTML = `
+    <div class="stat-block" style="border-top:3px solid var(--rose);">
+      <div class="stat-label">Critical Issues</div>
+      <div class="stat-val" style="color:var(--rose);">${critical}</div>
+      <div class="stat-sub">Nulls, duplicates</div>
+    </div>
+    <div class="stat-block" style="border-top:3px solid var(--orange);">
+      <div class="stat-label">Warnings</div>
+      <div class="stat-val" style="color:var(--orange);">${warning}</div>
+      <div class="stat-sub">Format issues</div>
+    </div>
+    <div class="stat-block" style="border-top:3px solid var(--emerald);">
+      <div class="stat-label">Total Rows Checked</div>
+      <div class="stat-val" style="color:var(--emerald);">${DATA.length.toLocaleString()}</div>
+      <div class="stat-sub">${COLS.length} columns each</div>
+    </div>`;
+
+  document.getElementById('validTbody').innerHTML = validationResults.slice(0, 200).map(r => `
+    <tr>
+      <td class="mono" style="color:var(--violet);">Row ${r.row}</td>
+      <td style="font-weight:600;">${r.col}</td>
+      <td>${r.issue}</td>
+      <td class="mono" style="color:var(--rose);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.value}</td>
+      <td><span class="pill ${r.severity === 'critical' ? 'pr' : 'po'}">${r.severity}</span></td>
+    </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--emerald);font-weight:700;">✓ No issues found! Your data is clean.</td></tr>`;
+}
+
+// ══════════════════════════════════════
+//  REPORT BUILDER
+// ══════════════════════════════════════
+function generateReport() {
+  const title = document.getElementById('rTitle').value;
+  const author = document.getElementById('rAuthor').value;
+  const dept = document.getElementById('rDept').value;
+  const type = document.getElementById('rType').value;
+  const now = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  if (!DATA.length) {
+    document.getElementById('reportOut').value = `${title}\n${'='.repeat(title.length)}\nPrepared by: ${author}\nDepartment: ${dept}\nDate: ${now}\n\nNo data loaded yet. Upload a CSV or Excel file first, then generate this report.`;
+    return;
+  }
+
+  const nullCount = DATA.reduce((acc, r) => acc + COLS.filter(c => r[c] === null || r[c] === undefined || r[c] === '').length, 0);
+  const totalCells = DATA.length * COLS.length;
+  const fillPct = ((1 - nullCount / totalCells) * 100).toFixed(1);
+  const critIssues = validationResults.filter(r => r.severity === 'critical').length;
+  const numCols = COLS.filter(c => DATA.some(r => typeof r[c] === 'number'));
+
+  let body = `${title}
+${'═'.repeat(60)}
+Report Type   : ${type}
+Prepared By   : ${author}
+Department    : ${dept}
+Date          : ${now}
+Source File   : ${FILENAME || 'N/A'}
+${'─'.repeat(60)}
+
+1. DATASET OVERVIEW
+${'─'.repeat(40)}
+  Total Records   : ${DATA.length.toLocaleString()}
+  Total Columns   : ${COLS.length}
+  Columns         : ${COLS.join(', ')}
+  Data Fill Rate  : ${fillPct}%
+  Total Cells     : ${totalCells.toLocaleString()}
+  Empty / Null    : ${nullCount.toLocaleString()} cells
+
+2. DATA QUALITY SUMMARY
+${'─'.repeat(40)}
+  Validation Status : ${critIssues === 0 ? 'PASS ✓' : 'ISSUES FOUND ✗'}
+  Critical Issues   : ${critIssues}
+  Warnings          : ${validationResults.filter(r => r.severity === 'warning').length}
+  Duplicate Rows    : ${validationResults.filter(r => r.issue === 'Duplicate row').length}`;
+
+  if (numCols.length > 0) {
+    body += `\n\n3. NUMERIC COLUMN STATISTICS\n${'─'.repeat(40)}`;
+    numCols.slice(0, 5).forEach(c => {
+      const vals = DATA.map(r => Number(r[c])).filter(v => !isNaN(v));
+      if (!vals.length) return;
+      const sum = vals.reduce((a, b) => a + b, 0);
+      const avg = sum / vals.length;
+      const min = Math.min(...vals);
+      const max = Math.max(...vals);
+      body += `\n  ${c}:\n    Sum: ${sum.toLocaleString()}  |  Avg: ${avg.toFixed(2)}  |  Min: ${min}  |  Max: ${max}`;
+    });
+  }
+
+  body += `\n\n4. COLUMN FILL RATES\n${'─'.repeat(40)}`;
+  COLS.forEach(c => {
+    const filled = DATA.filter(r => r[c] !== null && r[c] !== undefined && r[c] !== '').length;
+    const pct = ((filled / DATA.length) * 100).toFixed(1);
+    body += `\n  ${c.padEnd(25)} ${pct}% filled (${filled}/${DATA.length})`;
+  });
+
+  body += `\n\n5. RECOMMENDATIONS\n${'─'.repeat(40)}`;
+  if (nullCount > 0) body += `\n  • Address ${nullCount} empty cells — use IFERROR() or data cleaning before analysis.`;
+  if (validationResults.filter(r => r.issue === 'Duplicate row').length > 0) body += `\n  • Remove duplicate rows using Excel's "Remove Duplicates" feature.`;
+  if (validationResults.filter(r => r.issue === 'Number stored as text').length > 0) body += `\n  • Convert text-formatted numbers to numeric using VALUE() or column formatting.`;
+  if (nullCount === 0 && validationResults.length === 0) body += `\n  • Data quality is excellent. Proceed with analysis and reporting.`;
+
+  body += `\n\n${'═'.repeat(60)}\nGenerated by OperaDesk — MIS & Data Analyst Workspace\nBhaskar Sharma · ${now}\n${'═'.repeat(60)}`;
+
+  document.getElementById('reportOut').value = body;
+  addActivity(`📝 Report generated: ${title}`);
+  toast('✅ Report generated — copy or download', 'var(--emerald)');
+}
+
+function copyReport() {
+  const text = document.getElementById('reportOut').value;
+  if (!text) { toast('⚠ Generate a report first', '#e11d48'); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  toast('📋 Report copied to clipboard!');
+}
+
+function downloadReport() {
+  const text = document.getElementById('reportOut').value;
+  if (!text) { toast('⚠ Generate a report first', '#e11d48'); return; }
+  const title = document.getElementById('rTitle').value || 'report';
+  dlText(text, title.replace(/\s/g, '_') + '_' + today() + '.txt');
+  toast('⬇ Report downloaded!', 'var(--emerald)');
+}
+
+// ══════════════════════════════════════
+//  EXPORT CENTER
+// ══════════════════════════════════════
+function refreshExportPreview() {
+  if (!DATA.length) return;
+  const sample = DATA.slice(0, 20);
+  document.getElementById('exportPreviewMeta').textContent = `Showing 20 of ${DATA.length.toLocaleString()} rows`;
+  document.getElementById('exportHead').innerHTML = '<tr>' + COLS.map(c => `<th>${c}</th>`).join('') + '</tr>';
+  document.getElementById('exportBody').innerHTML = sample.map(r =>
+    '<tr>' + COLS.map(c => `<td>${r[c] ?? ''}</td>`).join('') + '</tr>'
+  ).join('');
+}
+
+function exportCSV() {
+  if (!DATA.length) { toast('⚠ No data to export', '#e11d48'); return; }
+  const csv = Papa.unparse(DATA);
+  dlText(csv, 'operadesk_export_' + today() + '.csv');
+  addActivity(`⬇ Exported CSV — ${DATA.length} rows`);
+  toast('⬇ CSV downloaded!', 'var(--emerald)');
+}
+
+function exportExcel() {
+  if (!DATA.length) { toast('⚠ No data to export', '#e11d48'); return; }
+  const ws = XLSX.utils.json_to_sheet(DATA);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'OperaDesk Export');
+  XLSX.writeFile(wb, 'operadesk_export_' + today() + '.xlsx');
+  addActivity(`⬇ Exported Excel — ${DATA.length} rows`);
+  toast('⬇ Excel file downloaded!', 'var(--emerald)');
+}
+
+function copyForExcel() {
+  if (!DATA.length) { toast('⚠ No data loaded', '#e11d48'); return; }
+  const tsv = [COLS.join('\t'), ...DATA.map(r => COLS.map(c => r[c] ?? '').join('\t'))].join('\n');
+  if (navigator.clipboard) navigator.clipboard.writeText(tsv);
+  toast('📋 Copied! Paste directly into Excel cells', 'var(--emerald)');
+}
+
+function exportValidationReport() {
+  if (!DATA.length) { toast('⚠ No data loaded', '#e11d48'); return; }
+  if (!validationResults.length) runValidation(true);
+  const rows = [['Row', 'Column', 'Issue', 'Value', 'Severity'], ...validationResults.map(r => [r.row, r.col, r.issue, r.value, r.severity])];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Validation Issues');
+  XLSX.writeFile(wb, 'validation_report_' + today() + '.xlsx');
+  toast('⬇ Validation report downloaded!', 'var(--emerald)');
+}
+
+function exportStats() {
+  if (!DATA.length) { toast('⚠ No data loaded', '#e11d48'); return; }
+  const rows = [['Column', 'Type', 'Filled', 'Empty', 'Unique', 'Fill%']];
+  COLS.forEach(c => {
+    const vals = DATA.map(r => r[c]);
+    const filled = vals.filter(v => v !== null && v !== undefined && v !== '').length;
+    const empty = vals.length - filled;
+    const unique = new Set(vals).size;
+    const pct = ((filled / vals.length) * 100).toFixed(1);
+    const isNum = vals.some(v => typeof v === 'number');
+    rows.push([c, isNum ? 'Number' : 'Text', filled, empty, unique, pct + '%']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Column Stats');
+  XLSX.writeFile(wb, 'column_stats_' + today() + '.xlsx');
+  toast('⬇ Stats downloaded!', 'var(--emerald)');
+}
+
+// ══════════════════════════════════════
+//  DATA MAPPING
+// ══════════════════════════════════════
+function renderMappings() {
+  const list = document.getElementById('mappingList');
+  const empty = document.getElementById('mappingEmpty');
+  if (!mappings.length) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = mappings.map((m, i) => `
+    <div class="map-row">
+      <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--violet);flex:1;">${m.src}</span>
+      <span style="color:var(--muted);font-size:12px;">→</span>
+      <span style="font-family:JetBrains Mono,monospace;font-size:11px;color:var(--emerald);flex:1;">${m.tgt}</span>
+      <span class="tag">${m.rule}</span>
+      ${m.note ? `<span style="font-size:10px;color:var(--muted);">${m.note}</span>` : ''}
+      <button style="padding:3px 8px;border-radius:5px;border:1px solid var(--rose-lt);background:var(--rose-lt);color:var(--rose);font-size:10px;cursor:pointer;" onclick="removeMapping(${i})">✕</button>
+    </div>`).join('');
+}
+
+function saveMapping() {
+  const src = document.getElementById('mapSrc').value.trim();
+  const tgt = document.getElementById('mapTgt').value.trim();
+  const rule = document.getElementById('mapRule').value;
+  const note = document.getElementById('mapNote').value.trim();
+  if (!src || !tgt) { toast('⚠ Fill source and target columns', '#e11d48'); return; }
+  mappings.push({ src, tgt, rule, note });
+  renderMappings();
+  document.getElementById('mapSrc').value = '';
+  document.getElementById('mapTgt').value = '';
+  document.getElementById('mapNote').value = '';
+  toast('✅ Mapping saved!', 'var(--emerald)');
+}
+
+function addMapping() { document.getElementById('mapSrc').focus(); }
+function removeMapping(i) { mappings.splice(i, 1); renderMappings(); }
+
+function exportMappingPlan() {
+  if (!mappings.length) { toast('⚠ Add at least one mapping first', '#e11d48'); return; }
+  const rows = [['Source Column', 'Target Column', 'Transform Rule', 'Notes'], ...mappings.map(m => [m.src, m.tgt, m.rule, m.note])];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Mapping Plan');
+  XLSX.writeFile(wb, 'data_mapping_plan_' + today() + '.xlsx');
+  toast('⬇ Mapping plan downloaded!', 'var(--emerald)');
+}
+
+// ══════════════════════════════════════
+//  ALERTS
+// ══════════════════════════════════════
+function renderAlerts() {
+  const alerts = [];
+  if (!DATA.length) { alerts.push({ dot: 'var(--violet)', title: 'No data loaded', desc: 'Upload a CSV or Excel file to start.', time: 'Now' }); }
+  else {
+    const crit = validationResults.filter(r => r.severity === 'critical').length;
+    const warn = validationResults.filter(r => r.severity === 'warning').length;
+    if (crit > 0) alerts.push({ dot: 'var(--rose)', title: `${crit} critical issues found`, desc: 'Null values or duplicate rows detected in your data.', time: 'Last validation' });
+    if (warn > 0) alerts.push({ dot: 'var(--orange)', title: `${warn} warnings`, desc: 'Format issues or numbers stored as text.', time: 'Last validation' });
+    if (crit === 0 && warn === 0) alerts.push({ dot: 'var(--emerald)', title: 'Data quality: Clean ✓', desc: 'No issues found in your dataset.', time: 'Last validation' });
+    alerts.push({ dot: 'var(--violet)', title: `${DATA.length.toLocaleString()} rows loaded`, desc: `File: ${FILENAME} · ${COLS.length} columns`, time: 'Loaded' });
+  }
+  document.getElementById('drawerBody').innerHTML = alerts.map(a => `
+    <div class="alert-item">
+      <div class="alert-dot" style="background:${a.dot}"></div>
+      <div><div class="alert-title">${a.title}</div><div class="alert-desc">${a.desc}</div><div class="alert-time">${a.time}</div></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════
+function today() {
+  return new Date().toISOString().split('T')[0].replace(/-/g, '');
+}
+
+function dlText(content, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: 'text/plain' }));
+  a.download = filename;
+  a.click();
+}
+</script>
+</body>
+</html>
